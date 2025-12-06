@@ -16,6 +16,7 @@ requires-python = ">=3.10"
 dependencies = [
     # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
     "openenv[core] @ git+https://github.com/meta-pytorch/OpenEnv.git@release",
+    "uvicorn[standard]",
     # Environment-specific dependencies
     # Add all dependencies needed for your environment here
     # Examples:

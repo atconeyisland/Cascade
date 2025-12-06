@@ -16,7 +16,7 @@ import time
 import httpx
 
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://burtenshaw-openenv-benchmark.hf.space/"
 
 
 async def reset(client: httpx.AsyncClient) -> dict:
