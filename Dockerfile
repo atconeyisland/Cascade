@@ -71,11 +71,18 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
+# Environment variables for runtime configuration
+ENV WORKERS=4
+ENV MAX_CONCURRENT_ENVS=100
+ENV PORT=8000
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Run the FastAPI server
-# The module path is constructed to work with the /app/env structure
+# Run the FastAPI server with configurable workers
+# WORKERS: Number of uvicorn worker processes (default: 4)
+# MAX_CONCURRENT_ENVS: Max concurrent environment sessions (default: 100)
+# PORT: Server port (default: 8000)
 ENV ENABLE_WEB_INTERFACE=true
-CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS}"]
