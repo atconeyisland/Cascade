@@ -1,0 +1,79 @@
+name: cascade
+version: 1.0.0
+description: >
+  Cascade is a production-grade RL environment for training and evaluating
+  AI agents on incident response. Agents receive realistic synthetic system
+  logs, diagnose cascading failures, select runbooks, and execute remediation
+  steps under time pressure. Three difficulty tiers from single-system failures
+  to cascading multi-service incidents with red herrings.
+author: Team Huntrix
+license: MIT
+tags:
+  - openenv
+  - incident-response
+  - devops
+  - production
+  - rl
+action_space:
+  type: object
+  fields:
+    action_type:
+      type: string
+      enum:
+        - select_runbook
+        - execute_step
+        - investigate
+        - escalate_to_human
+        - resolve
+        - rollback
+    action_value:
+      type: string
+    reasoning:
+      type: string
+observation_space:
+  type: object
+  fields:
+    alert_message:
+      type: string
+    system_logs:
+      type: array
+      items: string
+    available_runbooks:
+      type: array
+      items: string
+    current_step:
+      type: integer
+    episode_done:
+      type: boolean
+    steps_taken:
+      type: array
+      items: string
+    affected_services:
+      type: array
+      items: string
+    severity_level:
+      type: string
+    priority_level:
+      type: string
+      enum:
+        - P1
+        - P2
+        - P3
+    human_intervention_required:
+      type: boolean
+tasks:
+  - id: 1
+    name: single-system-failure
+    difficulty: easy
+    description: Database CPU at 100% due to missing index. Single root cause, no red herrings.
+    max_steps: 6
+  - id: 2
+    name: cascading-dual-failure
+    difficulty: medium
+    description: Memory leak in Service A causing cascading timeouts in Service B. Two interacting failures.
+    max_steps: 10
+  - id: 3
+    name: cascading-with-red-herrings
+    difficulty: hard
+    description: Network partition causing 3 downstream failures with misleading CPU spike. Frontier models struggle.
+    max_steps: 15

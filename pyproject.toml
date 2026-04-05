@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "cascade-env"
+version = "1.0.0"
+description = "Train agents to stop failures before they spread."
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.9.0",
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+cascade-server = "server.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
