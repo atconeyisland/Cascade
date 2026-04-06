@@ -1,3 +1,13 @@
+---
+title: Cascade Environment Server
+emoji: ⚡
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+app_port: 8000
+---
+
 # 🚨 Cascade — Incident Response Commander RL Environment
 
 > A reinforcement learning environment for training autonomous IT incident response agents, built for Hackathon Round 1.
