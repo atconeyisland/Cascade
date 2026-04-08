@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-from cascade_env.server import app
-import uvicorn
-
-def main():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-if __name__ == "__main__":
-    main()  
-=======
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -85,4 +75,3 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
     main(port=args.port)
->>>>>>> feat/dockerfile-requirements

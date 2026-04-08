@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: cascade
 version: 1.0.0
 description: >
@@ -77,3 +78,12 @@ tasks:
     difficulty: hard
     description: Network partition causing 3 downstream failures with misleading CPU spike. Frontier models struggle.
     max_steps: 15
+=======
+spec_version: 1
+name: benchmark
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+
+>>>>>>> feat/dockerfile-requirements
