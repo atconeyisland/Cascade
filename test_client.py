@@ -16,15 +16,12 @@ from cascade_env.models import CascadeAction, ActionType
 def test_server():
     """Test basic server connectivity and functionality."""
     try:
-        # Connect to local server
         env = CascadeEnv(base_url="http://localhost:8000", timeout=5.0)
         
-        # Test 1: Health check
         print("✓ Connected to server at http://localhost:8000")
         health = env.health()
         print(f"✓ Health check: {health}")
         
-        # Test 2: Reset environment
         print("\n📋 Running Task 1 (Database CPU Spike)...")
         obs = env.reset(task_id=1)
         print(f"✓ Reset complete")
@@ -32,8 +29,8 @@ def test_server():
         print(f"  Services: {', '.join(obs.affected_services)}")
         print(f"  Priority: {obs.priority_level}")
         print(f"  Runbooks available: {', '.join(obs.available_runbooks)}")
+
         
-        # Test 3: Take an action
         print("\n🔧 Taking action: Investigate database...")
         action = CascadeAction(
             action_type=ActionType.INVESTIGATE,
@@ -46,7 +43,7 @@ def test_server():
         print(f"  Done: {result.done}")
         print(f"  Info: {result.info}")
         
-        # Test 4: Select correct runbook
+       
         print("\n🔧 Taking action: Select db-cpu-runbook...")
         action = CascadeAction(
             action_type=ActionType.SELECT_RUNBOOK,
@@ -58,7 +55,7 @@ def test_server():
         print(f"  Reward: {result.reward:.2f}")
         print(f"  Episode progress: step {result.observation.current_step}/{env.get_state(task_id=1)['current_step']}")
         
-        # Test 5: Check state
+        
         print("\n📊 Current state:")
         state = env.get_state(task_id=1)
         print(f"  Task ID: {state['task_id']}")
