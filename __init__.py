@@ -1,13 +1,17 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
+# Copyright (c) 2026 - Cascade Environment
 #
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+# Cascade is a reinforcement learning environment for training 
+# autonomous IT incident response agents.
 
-"""Benchmark Environment - A simple test environment for HTTP server."""
+"""Cascade RL Environment - Incident Response Simulation."""
 
-from .client import BenchmarkEnv
-from .models import BenchmarkAction, BenchmarkObservation
-
-__all__ = ["BenchmarkAction", "BenchmarkObservation", "BenchmarkEnv"]
-
+__version__ = "1.0.0"
+__author__ = "Team Huntrix"
+__all__ = [
+    "CascadeEnvironment",
+    "CascadeAction", 
+    "CascadeObservation",
+    "StepResult",
+    "ActionType",
+    "PriorityLevel",
+]

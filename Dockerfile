@@ -3,30 +3,14 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
-<<<<<<< HEAD
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /app/requirements.txt
-
-COPY src /app/src
-COPY server /app/server
-COPY pyproject.toml /app/pyproject.toml
-COPY openenv.yaml /app/openenv.yaml
-
-ENV PYTHONPATH=/app/src
-
-EXPOSE 8000
-
-CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]
-=======
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-COPY . /app/benchmark
+COPY . /app
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/src:/app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "benchmark.server.app:app", "--host", "0.0.0.0", "--port", "8000"]
->>>>>>> feat/dockerfile-requirements
+CMD ["python", "-m", "server.app"]
