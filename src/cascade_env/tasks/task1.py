@@ -48,11 +48,8 @@ class Task:
             ],
             affected_services=["payments-api", "db-primary"],
             severity_level="high",
-            priority_level=PriorityLevel.P2,
+            priority_level="P2",
             human_intervention_required=False,
-            current_step=0,
-            episode_done=False,
-            steps_taken=[]
         )
 
     def get_current_observation(
@@ -79,11 +76,8 @@ class Task:
             ],
             affected_services=["payments-api", "db-primary"],
             severity_level="high",
-            priority_level=PriorityLevel.P2,
-            human_intervention_required=False,
-            current_step=current_step,
-            episode_done=done,
-            steps_taken=steps_taken
+            priority_level="P2",
+            human_intervention_required=False
         )
 
     def is_correct_runbook(self, runbook: str) -> bool:

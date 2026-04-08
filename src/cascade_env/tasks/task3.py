@@ -56,11 +56,8 @@ class Task:
                 "notification-service"
             ],
             severity_level="critical",
-            priority_level=PriorityLevel.P1,
-            human_intervention_required=True,
-            current_step=0,
-            episode_done=False,
-            steps_taken=[]
+            priority_level="P3",
+            human_intervention_required=True
         )
 
     def get_current_observation(
@@ -93,11 +90,8 @@ class Task:
                 "notification-service"
             ],
             severity_level="critical",
-            priority_level=PriorityLevel.P1,
-            human_intervention_required=True,
-            current_step=current_step,
-            episode_done=done,
-            steps_taken=steps_taken
+            priority_level="P3",
+            human_intervention_required=True
         )
 
     def is_correct_runbook(self, runbook: str) -> bool:

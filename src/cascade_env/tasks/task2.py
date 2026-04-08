@@ -50,11 +50,8 @@ class Task:
             ],
             affected_services=["auth-service", "api-gateway"],
             severity_level="critical",
-            priority_level=PriorityLevel.P1,
-            human_intervention_required=False,
-            current_step=0,
-            episode_done=False,
-            steps_taken=[]
+            priority_level="P1",
+            human_intervention_required=False
         )
 
     def get_current_observation(
@@ -82,11 +79,8 @@ class Task:
             ],
             affected_services=["auth-service", "api-gateway"],
             severity_level="critical",
-            priority_level=PriorityLevel.P1,
-            human_intervention_required=False,
-            current_step=current_step,
-            episode_done=done,
-            steps_taken=steps_taken
+            priority_level="P1",
+            human_intervention_required=False
         )
 
     def is_correct_runbook(self, runbook: str) -> bool:
