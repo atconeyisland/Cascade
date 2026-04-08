@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from .models import CascadeAction, CascadeObservation, StepResult
 from .environment import CascadeEnvironment
 from typing import Dict
@@ -24,15 +24,15 @@ def health():
     return {"status": "ok", "name": "cascade"}
 
 
-@app.post("/reset/{task_id}", response_model=CascadeObservation)
-def reset(task_id: int = 1):
+@app.post("/reset", response_model=CascadeObservation)
+def reset(task_id: int = Query(default=1)):
     env = get_env(task_id)
     observation = env.reset()
     return observation
 
 
-@app.post("/step/{task_id}", response_model=StepResult)
-def step(action: CascadeAction, task_id: int = 1):
+@app.post("/step", response_model=StepResult)
+def step(action: CascadeAction, task_id: int = Query(default=1)):
     env = get_env(task_id)
     if env.last_observation is None:
         raise HTTPException(
@@ -43,7 +43,7 @@ def step(action: CascadeAction, task_id: int = 1):
     return result
 
 
-@app.get("/state/{task_id}")
-def state(task_id: int = 1):
+@app.get("/state")
+def state(task_id: int = Query(default=1)):
     env = get_env(task_id)
     return env.state()
