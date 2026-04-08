@@ -8,7 +8,7 @@ An **RL environment for training autonomous IT incident response agents**. Agent
 
 ### Step 1: Install Dependencies
 ```bash
-cd d:\DOCUMENTS\CollegeStuff\Cascade
+cd folder/of/choice
 python -m pip install -r requirements.txt
 ```
 
