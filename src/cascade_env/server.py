@@ -24,14 +24,14 @@ def health():
     return {"status": "ok", "name": "cascade"}
 
 
-@app.post("/reset", response_model=CascadeObservation)
+@app.post("/reset/{task_id}", response_model=CascadeObservation)
 def reset(task_id: int = 1):
     env = get_env(task_id)
     observation = env.reset()
     return observation
 
 
-@app.post("/step", response_model=StepResult)
+@app.post("/step/{task_id}", response_model=StepResult)
 def step(action: CascadeAction, task_id: int = 1):
     env = get_env(task_id)
     if env.last_observation is None:
@@ -43,7 +43,7 @@ def step(action: CascadeAction, task_id: int = 1):
     return result
 
 
-@app.get("/state")
+@app.get("/state/{task_id}")
 def state(task_id: int = 1):
     env = get_env(task_id)
     return env.state()
