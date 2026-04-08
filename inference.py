@@ -225,8 +225,8 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
                 break
 
         # Use final grader score if available, otherwise sum step rewards
-        score   = float(getattr(result, "score", sum(rewards))) if result else sum(rewards)
-        score   = round(min(max(score, 0.0), 1.0), 4)
+        score = result.reward if result else 0.0
+        score = round(min(max(score, 0.0), 1.0), 4)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:

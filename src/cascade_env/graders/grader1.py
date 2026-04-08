@@ -1,12 +1,13 @@
 from cascade_env.models import CascadeObservation
 
 CORRECT_RUNBOOK = "db-cpu-runbook"
-CORRECT_INVESTIGATION = "database"
 CORRECT_STEPS = [
     "run explain on slow query",
     "identify missing index",
     "add index"
 ]
+
+INVESTIGATION_KEYWORDS = ["database", "db", "db-primary", "postgres", "mysql"]
 
 
 def grade(steps_taken: list[str], final_observation: CascadeObservation) -> float:
@@ -14,11 +15,13 @@ def grade(steps_taken: list[str], final_observation: CascadeObservation) -> floa
     steps_lower = [s.lower() for s in steps_taken]
 
     # +0.20 — correct system investigated
-    if any(CORRECT_INVESTIGATION in s for s in steps_lower):
+    investigated = any(any(k in s for k in INVESTIGATION_KEYWORDS) for s in steps_lower)
+    if investigated:
         score += 0.20
 
     # +0.20 — correct runbook selected
-    if any(CORRECT_RUNBOOK in s for s in steps_lower):
+    runbook_done = any(CORRECT_RUNBOOK in s for s in steps_lower)
+    if runbook_done:
         score += 0.20
 
     # +0.15 per correct remediation step (max 3 steps = 0.45)
@@ -34,9 +37,7 @@ def grade(steps_taken: list[str], final_observation: CascadeObservation) -> floa
 
     # +0.25 — incident fully resolved
     # requires runbook + investigation + at least 2 correct steps
-    runbook_done = any(CORRECT_RUNBOOK in s for s in steps_lower)
-    investigation_done = any(CORRECT_INVESTIGATION in s for s in steps_lower)
-    if runbook_done and investigation_done and steps_found >= 2:
+    if runbook_done and investigated and steps_found >= 2:
         score += 0.25
 
     # -0.20 — failed to escalate when human intervention was required

@@ -91,8 +91,8 @@ class Task:
         return self.runbook_selected == CORRECT_RUNBOOK
 
     def is_correct_investigation(self, value: str) -> bool:
-        self.investigation_done = True
-        return CORRECT_INVESTIGATION in value.lower()
+        keywords = ["database", "db", "db-primary", "postgres", "mysql"]
+        return any(k in value.lower() for k in keywords)
 
     def is_correct_step(self, step: str, steps_taken: list) -> bool:
         step_lower = step.lower().strip()
