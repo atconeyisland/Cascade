@@ -34,9 +34,7 @@ TASK_NAME_TO_ID = {
     "task3_hard":   3,
 }
 
-# ---------------------------------------------------------------------------
-# Log functions — exact format required by judges, do not change
-# ---------------------------------------------------------------------------
+
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
@@ -61,9 +59,6 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     )
 
 
-# ---------------------------------------------------------------------------
-# Heuristic-based action selector (replaces LLM)
-# ---------------------------------------------------------------------------
 def get_agent_action(obs, step: int, history: List[str]) -> str:
     """
     Heuristic agent: selects actions based on rules and observation state.
@@ -71,34 +66,27 @@ def get_agent_action(obs, step: int, history: List[str]) -> str:
     """
     # Prefer investigating before selecting runbooks
     if step == 1:
-        # First step: investigate the primary affected service
         if obs.affected_services:
             service = obs.affected_services[0]
             return f"investigate::{service}"
         return "investigate::incident"
     
-    # If we have runbooks and haven't selected one yet, choose the first available
+    
     if "select_runbook" not in " ".join(history):
         if obs.available_runbooks:
             runbook = obs.available_runbooks[0]
             return f"select_runbook::{runbook}"
     
-    # If human intervention required and not escalated yet, escalate
     if obs.human_intervention_required and "escalate_to_human" not in " ".join(history):
         return f"escalate_to_human::critical_issue_requires_human_expertise"
     
-    # Otherwise, try to execute a remediation step
     if step > 2:
         return "execute_step::apply_selected_remediation_steps"
     
-    # Fallback: resolve if we've done enough steps
     return "resolve::incident_addressed_by_automation"
 
 
 
-# ---------------------------------------------------------------------------
-# Single task runner
-# ---------------------------------------------------------------------------
 def run_task(task_name: str, env: CascadeEnv) -> dict:
     task_id    = TASK_NAME_TO_ID.get(task_name, 1)
     max_steps  = TASK_MAX_STEPS.get(task_name, 10)
@@ -165,9 +153,6 @@ def run_task(task_name: str, env: CascadeEnv) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def main() -> None:
     env_url = os.getenv("CASCADE_ENV_URL", "http://localhost:8000")
 
