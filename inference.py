@@ -4,10 +4,7 @@ inference.py — Cascade RL Environment
 Baseline agent script for the Cascade incident response environment.
 Runs the agent through all 3 tasks and emits [START] [STEP] [END] logs.
 
-Environment variables (never hardcoded):
-    API_BASE_URL   The LLM API endpoint
-    MODEL_NAME     The model identifier
-    HF_TOKEN       Hugging Face / API key
+Uses heuristic-based action selection (no LLM required).
 """
 
 import os
@@ -16,31 +13,14 @@ import textwrap
 import time
 from typing import List, Optional
 
-from openai import OpenAI
-
 from cascade_env.client import CascadeEnv
 from cascade_env.models import CascadeAction
 
-# ---------------------------------------------------------------------------
-# Environment variables
-# ---------------------------------------------------------------------------
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-
-if not API_KEY:
-    print("ERROR: HF_TOKEN environment variable is required.", file=sys.stderr)
-    sys.exit(1)
-
-print(f"[CONFIG] API_BASE_URL={API_BASE_URL}")
-print(f"[CONFIG] MODEL_NAME={MODEL_NAME}")
-print(f"[CONFIG] Using OpenAI client")
+print(f"[CONFIG] Using heuristic-based agent (no LLM)")
 print()
 
 BENCHMARK               = "cascade"
 SUCCESS_SCORE_THRESHOLD = 0.5
-TEMPERATURE             = 0.3
-MAX_TOKENS              = 300
 
 TASK_MAX_STEPS = {
     "task1_easy":   6,
@@ -82,92 +62,44 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 
 # ---------------------------------------------------------------------------
-# Prompts
+# Heuristic-based action selector (replaces LLM)
 # ---------------------------------------------------------------------------
-SYSTEM_PROMPT = textwrap.dedent("""
-    You are an expert on-call Site Reliability Engineer responding to a production incident.
-    You will receive an alert message, system logs, and a list of available runbooks.
+def get_agent_action(obs, step: int, history: List[str]) -> str:
+    """
+    Heuristic agent: selects actions based on rules and observation state.
+    No LLM required — deterministic and fast.
+    """
+    # Prefer investigating before selecting runbooks
+    if step == 1:
+        # First step: investigate the primary affected service
+        if obs.affected_services:
+            service = obs.affected_services[0]
+            return f"investigate::{service}"
+        return "investigate::incident"
+    
+    # If we have runbooks and haven't selected one yet, choose the first available
+    if "select_runbook" not in " ".join(history):
+        if obs.available_runbooks:
+            runbook = obs.available_runbooks[0]
+            return f"select_runbook::{runbook}"
+    
+    # If human intervention required and not escalated yet, escalate
+    if obs.human_intervention_required and "escalate_to_human" not in " ".join(history):
+        return f"escalate_to_human::critical_issue_requires_human_expertise"
+    
+    # Otherwise, try to execute a remediation step
+    if step > 2:
+        return "execute_step::apply_selected_remediation_steps"
+    
+    # Fallback: resolve if we've done enough steps
+    return "resolve::incident_addressed_by_automation"
 
-    At each step you must respond with EXACTLY this format (one line, no extra text):
-        action_type::action_value
-
-    Valid action_type values:
-        investigate       — investigate a service or log. action_value = service name or keyword
-        select_runbook    — select a runbook. action_value = exact runbook name from available_runbooks
-        execute_step      — execute a remediation step. action_value = description of the step
-        escalate_to_human — escalate to a human. action_value = reason for escalation
-        resolve           — declare the incident resolved. action_value = brief resolution summary
-        rollback          — roll back a change. action_value = what to roll back
-
-    Rules:
-        - Always investigate before selecting a runbook.
-        - Select ONLY runbooks from the available_runbooks list.
-        - If human_intervention_required is True, you MUST use escalate_to_human before resolve.
-        - Do not repeat the same action twice.
-        - Be decisive — do not waste steps.
-        - Respond with ONLY the action line. No explanations, no extra text.
-""").strip()
-
-
-def build_user_prompt(obs, step: int, history: List[str]) -> str:
-    logs_block    = "\n".join(obs.system_logs) if obs.system_logs else "No logs available."
-    runbooks_list = ", ".join(obs.available_runbooks) if obs.available_runbooks else "None"
-    history_block = "\n".join(history[-5:]) if history else "None"
-    human_note    = (
-        "YES — you MUST use escalate_to_human before resolve."
-        if obs.human_intervention_required
-        else "No — resolve autonomously."
-    )
-    return textwrap.dedent(f"""
-        INCIDENT ALERT:
-        {obs.alert_message}
-
-        AFFECTED SERVICES: {", ".join(obs.affected_services)}
-        SEVERITY: {obs.severity_level}  |  PRIORITY: {obs.priority_level}
-        HUMAN INTERVENTION REQUIRED: {human_note}
-
-        SYSTEM LOGS:
-        {logs_block}
-
-        AVAILABLE RUNBOOKS: {runbooks_list}
-
-        STEP: {step}
-        PREVIOUS ACTIONS:
-        {history_block}
-
-        What is your next action? (respond with action_type::action_value only)
-    """).strip()
-
-
-# ---------------------------------------------------------------------------
-# LLM call
-# ---------------------------------------------------------------------------
-def get_agent_action(client: OpenAI, obs, step: int, history: List[str]) -> str:
-    user_prompt = build_user_prompt(obs, step, history)
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": user_prompt},
-            ],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-            stream=False,
-        )
-        text = (completion.choices[0].message.content or "").strip()
-        if "::" not in text:
-            return f"investigate::{text}"
-        return text.split("\n")[0].strip()
-    except Exception as exc:
-        print(f"[DEBUG] Model request failed at step {step}: {exc}", flush=True)
-        return "investigate::unknown"
 
 
 # ---------------------------------------------------------------------------
 # Single task runner
 # ---------------------------------------------------------------------------
-def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
+def run_task(task_name: str, env: CascadeEnv) -> dict:
     task_id    = TASK_NAME_TO_ID.get(task_name, 1)
     max_steps  = TASK_MAX_STEPS.get(task_name, 10)
     history:   List[str]   = []
@@ -176,7 +108,7 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
     score       = 0.0
     success     = False
 
-    log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
+    log_start(task=task_name, env=BENCHMARK, model="heuristic-agent")
 
     try:
         obs  = env.reset(task_id=task_id)
@@ -186,7 +118,7 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
             if done:
                 break
 
-            action_str   = get_agent_action(client, obs, step, history)
+            action_str   = get_agent_action(obs, step, history)
             parts        = action_str.split("::", 1)
             action_type  = parts[0].strip()
             action_value = parts[1].strip() if len(parts) > 1 else ""
@@ -237,8 +169,7 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
-    client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    env_url = os.getenv("CASCADE_ENV_URL", "http://localhost:8000")  # fixed port
+    env_url = os.getenv("CASCADE_ENV_URL", "http://localhost:8000")
 
     print(f"[CONFIG] Connecting to Cascade environment at {env_url}", flush=True)
 
@@ -264,7 +195,7 @@ def main() -> None:
 
     try:
         for task_name in tasks:
-            result = run_task(client, task_name, env)
+            result = run_task(task_name, env)
             results.append(result)
     finally:
         try:
