@@ -32,6 +32,39 @@ API_BASE_URL  = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME    = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 IMAGE_NAME    = os.getenv("LOCAL_IMAGE_NAME")
 
+# ---------------------------------------------------------------------------
+# Validate required environment variables
+# ---------------------------------------------------------------------------
+if not API_KEY:
+    print(
+        "ERROR: HF_TOKEN environment variable is required.\n"
+        "Set your API key: export HF_TOKEN='your_api_key_here'\n"
+        "Alternatives: export API_KEY='your_api_key_here'",
+        file=__import__('sys').stderr
+    )
+    __import__('sys').exit(1)
+
+if not API_BASE_URL:
+    print(
+        "ERROR: API_BASE_URL environment variable is required.\n"
+        "Example: export API_BASE_URL='https://api.openai.com/v1'",
+        file=__import__('sys').stderr
+    )
+    __import__('sys').exit(1)
+
+if not MODEL_NAME:
+    print(
+        "ERROR: MODEL_NAME environment variable is required.\n"
+        "Example: export MODEL_NAME='gpt-4o'",
+        file=__import__('sys').stderr
+    )
+    __import__('sys').exit(1)
+
+print(f"[CONFIG] API_BASE_URL={API_BASE_URL}")
+print(f"[CONFIG] MODEL_NAME={MODEL_NAME}")
+print(f"[CONFIG] Using OpenAI client")
+print()
+
 BENCHMARK     = "cascade"
 SUCCESS_SCORE_THRESHOLD = 0.5  # episode is a success if score >= 0.5
 

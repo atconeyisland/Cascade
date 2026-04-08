@@ -11,6 +11,9 @@ COPY . /app
 
 ENV PYTHONPATH=/app/src:/app
 
-EXPOSE 8000
+# Make startup script executable
+RUN chmod +x /app/start.sh
 
-CMD ["python", "-m", "server.app"]
+EXPOSE 7860 8000
+
+CMD ["/app/start.sh"]

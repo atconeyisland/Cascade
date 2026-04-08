@@ -1,7 +1,6 @@
 ---
-<<<<<<< HEAD
-title: Cascade Environment Server
-emoji: ⚡
+title: Cascade RL Environment - Incident Response
+emoji: 🚨
 colorFrom: blue
 colorTo: green
 sdk: docker
