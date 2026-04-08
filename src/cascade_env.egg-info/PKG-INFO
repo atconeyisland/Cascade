@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: cascade-env
+Version: 1.0.0
+Summary: Train agents to stop failures before they spread. A reinforcement learning environment for incident response.
+Requires-Python: >=3.10
+Requires-Dist: openenv-core>=0.2.0
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn>=0.32.0
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: openai>=1.0.0
+Requires-Dist: httpx>=0.28.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
