@@ -59,9 +59,7 @@ TASK_NAME_TO_ID = {
     "task3_hard":   3,
 }
 
-# ---------------------------------------------------------------------------
-# Log functions — exact format required by judges, do not change
-# ---------------------------------------------------------------------------
+
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
@@ -246,9 +244,6 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def main() -> None:
     client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env_url = os.getenv("CASCADE_ENV_URL", "https://mokshita1-cascade-env.hf.space")
