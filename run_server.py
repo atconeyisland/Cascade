@@ -12,10 +12,10 @@ from server.app import app
 import uvicorn
 
 if __name__ == "__main__":
-    print("🚀 Starting Cascade RL Environment Server")
-    print("📡 API running on http://localhost:8000")
-    print("📊 Docs available at http://localhost:8000/docs")
-    print("🔙 Press CTRL+C to stop\n")
+    print("Starting Cascade server")
+    print("API running on http://localhost:8000")
+    print("Docs at http://localhost:8000/docs")
+    print("Press CTRL+C to stop\n")
     
     uvicorn.run(
         app,
