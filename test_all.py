@@ -14,7 +14,6 @@ def check(condition, message):
 
 all_passed = True
 
-# ─── GRADER VARIANCE TEST ───
 print("\n" + "=" * 55)
 print("1. GRADER VARIANCE TEST")
 print("=" * 55)
@@ -138,7 +137,7 @@ for t in tests:
     r6 = check(score_destructive <= score_partial, f"Destructive <= Partial (penalty works)")
     all_passed = all_passed and all([r1, r2, r3, r4, r5, r6])
 
-# ─── EPISODE BOUNDARY TEST ───
+
 print("\n" + "=" * 55)
 print("2. EPISODE BOUNDARY TEST")
 print("=" * 55)
@@ -169,7 +168,7 @@ for task_id in [1, 2, 3]:
 
     all_passed = all_passed and all([r1, r2, r3, r4, r5, r6, r7, r8])
 
-# ─── REWARD RANGE TEST ───
+
 print("\n" + "=" * 55)
 print("3. REWARD RANGE TEST")
 print("=" * 55)

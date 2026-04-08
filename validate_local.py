@@ -35,7 +35,7 @@ except Exception as e:
     print(f"  ❌ Error running tests: {e}")
     sys.exit(1)
 
-# Test 2: API Server Health
+
 print("\n[2/5] Checking API Server Health...")
 try:
     response = requests.get("http://localhost:8000/health", timeout=5)
@@ -57,7 +57,7 @@ except Exception as e:
     print(f"  ❌ API Server: Error - {e}")
     sys.exit(1)
 
-# Test 3: REST API Endpoints
+
 print("\n[3/5] Testing REST API Endpoints...")
 try:
     # Reset task 1
@@ -69,7 +69,7 @@ try:
         print(f"  ❌ /reset/1: HTTP {resp.status_code}")
         sys.exit(1)
     
-    # Check state
+    
     resp = requests.get("http://localhost:8000/state/1", timeout=5)
     if resp.status_code == 200:
         print(f"  ✅ /state/1: OK (got state)")
@@ -77,7 +77,7 @@ try:
         print(f"  ❌ /state/1: HTTP {resp.status_code}")
         sys.exit(1)
     
-    # Take a step
+    
     step_data = {
         "action_type": "investigate",
         "action_value": "database",
@@ -95,10 +95,10 @@ except Exception as e:
     print(f"  ❌ API Endpoints: Error - {e}")
     sys.exit(1)
 
-# Test 4: Environment Variable Validation
+
 print("\n[4/5] Testing Environment Variable Validation...")
 try:
-    # Test that inference.py validates env vars
+    
     env = os.environ.copy()
     env.pop('HF_TOKEN', None)
     env.pop('API_KEY', None)
@@ -121,12 +121,12 @@ try:
 except Exception as e:
     print(f"  ⚠️  Env validation test: {e}")
 
-# Test 5: OpenEnv Compliance
+
 print("\n[5/5] Testing OpenEnv Compliance...")
 try:
     env = CascadeEnvironment(task_id=1)
     
-    # Test reset returns observation
+   
     obs = env.reset()
     if obs is not None and hasattr(obs, '__dict__'):
         print(f"  ✅ reset(): Returns observation")
@@ -134,7 +134,7 @@ try:
         print(f"  ❌ reset(): Invalid response")
         sys.exit(1)
     
-    # Test step returns StepResult
+    
     action = CascadeAction(
         action_type=ActionType.INVESTIGATE,
         action_value="database",
@@ -147,7 +147,7 @@ try:
         print(f"  ❌ step(): Invalid return format")
         sys.exit(1)
     
-    # Test state property
+    
     state = env.state
     if state is not None and hasattr(state, '__dict__'):
         print(f"  ✅ state property: Valid")
@@ -159,7 +159,7 @@ except Exception as e:
     print(f"  ❌ OpenEnv compliance: {e}")
     sys.exit(1)
 
-# Summary
+
 print("\n" + "="*70)
 print("✅ ALL VALIDATION TESTS PASSED!")
 print("="*70)
