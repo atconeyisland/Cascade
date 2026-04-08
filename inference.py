@@ -15,14 +15,15 @@ Stdout format (exact — do not modify field names or ordering):
     [END]   success=<true|false> steps=<n> score=<score> rewards=<r1,r2,...,rn>
 """
 
-import asyncio
 import os
 import textwrap
+import time
 from typing import List, Optional
 
 from openai import OpenAI
 
-from cascade_env.client import CascadeEnv, CascadeAction
+from cascade_env.client import CascadeEnv
+from cascade_env.models import CascadeAction
 
 # ---------------------------------------------------------------------------
 # Environment variables — never hardcoded
@@ -209,9 +210,20 @@ def get_agent_action(
 
 
 # ---------------------------------------------------------------------------
+# Map task names to task IDs
+# ---------------------------------------------------------------------------
+TASK_NAME_TO_ID = {
+    "task1_easy": 1,
+    "task2_medium": 2,
+    "task3_hard": 3,
+}
+
+
+# ---------------------------------------------------------------------------
 # Single task runner
 # ---------------------------------------------------------------------------
-async def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
+def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
+    task_id = TASK_NAME_TO_ID.get(task_name, 1)
     max_steps = TASK_MAX_STEPS.get(task_name, 10)
     history:  List[str]  = []
     rewards:  List[float] = []
@@ -223,11 +235,11 @@ async def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
 
     try:
         # Reset environment for this task
-        result = await env.reset(task=task_name)
-        obs    = result.observation
+        obs = env.reset(task_id=task_id)
+        done = False
 
         for step in range(1, max_steps + 1):
-            if result.done:
+            if done:
                 break
 
             # Get action from LLM agent
@@ -239,16 +251,16 @@ async def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
             action_value = parts[1].strip() if len(parts) > 1 else ""
 
             # Step the environment
-            result = await env.step(CascadeAction(
+            result = env.step(CascadeAction(
                 action_type=action_type,
                 action_value=action_value,
                 reasoning=f"Step {step}: {action_str}",
-            ))
+            ), task_id=task_id)
 
             obs    = result.observation
             reward = result.reward or 0.0
             done   = result.done
-            error  = getattr(result, "error", None)
+            error  = None
 
             rewards.append(reward)
             steps_taken = step
@@ -261,42 +273,58 @@ async def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
                 break
 
         # Final score comes from the grader via env
-        score   = getattr(result, "score", sum(rewards))
+        score   = sum(rewards) if rewards else 0.0
         score   = round(min(max(float(score), 0.0), 1.0), 4)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
-        print(f"[DEBUG] Task {task_name} failed with exception: {exc}", flush=True)
-
-    finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
-
-    return {"task": task_name, "score": score, "steps": steps_taken, "success": success}
-
-
-# ---------------------------------------------------------------------------
-# Main — runs all 3 tasks sequentially
-# ---------------------------------------------------------------------------
-async def main() -> None:
+def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-    # Connect to the Cascade environment running on HF Spaces
-    env = await CascadeEnv.from_docker_image(IMAGE_NAME)
+    # Connect to the Cascade environment running on HF Spaces or localhost
+    env_url = os.getenv("CASCADE_ENV_URL", "http://localhost:7860")
+    print(f"[CONFIG] Connecting to Cascade environment at {env_url}", flush=True)
+    
+    # Wait for server to be ready (important for HF Spaces startup)
+    max_retries = 30
+    for attempt in range(max_retries):
+        try:
+            env = CascadeEnv(base_url=env_url)
+            health = env.health()
+            print(f"[CONFIG] Environment health check passed: {health}", flush=True)
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"[DEBUG] Waiting for environment... (attempt {attempt + 1}/{max_retries})", flush=True)
+                time.sleep(1)
+            else:
+                raise Exception(f"Failed to connect to environment after {max_retries} attempts: {e}")
 
     tasks = ["task1_easy", "task2_medium", "task3_hard"]
     results = []
 
     try:
         for task_name in tasks:
-            result = await run_task(client, task_name, env)
+            result = run_task(client, task_name, env)
             results.append(result)
     finally:
         try:
-            await env.close()
+            env.close()
         except Exception as e:
             print(f"[DEBUG] env.close() error: {e}", flush=True)
 
     # Summary
+    print("\n[DEBUG] === BASELINE SCORES (save these for README) ===", flush=True)
+    for r in results:
+        print(
+            f"[DEBUG] {r['task']}: score={r['score']:.3f} "
+            f"steps={r['steps']} success={r['success']}",
+            flush=True,
+        )
+
+
+if __name__ == "__main__":
+    main(
     print("\n[DEBUG] === BASELINE SCORES (save these for README) ===", flush=True)
     for r in results:
         print(
