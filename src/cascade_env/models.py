@@ -22,13 +22,10 @@ class CascadeObservation(BaseModel):
     alert_message: str
     system_logs: List[str]
     available_runbooks: List[str]
-    current_step: int
-    episode_done: bool
-    steps_taken: List[str] = Field(default_factory=list)
-    affected_services: List[str] = Field(default_factory=list)
-    severity_level: str = "medium"
-    priority_level: PriorityLevel = PriorityLevel.P2
-    human_intervention_required: bool = False
+    affected_services: List[str]
+    severity_level: str
+    priority_level: str
+    human_intervention_required: bool
 
 
 class CascadeAction(BaseModel):
