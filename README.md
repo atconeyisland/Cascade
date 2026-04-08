@@ -1,9 +1,14 @@
 ---
+<<<<<<< HEAD
 title: Cascade RL Environment - Incident Response
 colorFrom: blue
 colorTo: green
 sdk: docker
 pinned: false
+=======
+title: Cascade
+sdk: docker
+>>>>>>> 35b26e96be0057a5cc09c78bee72aff506bdc01c
 app_port: 8000
 ---
 
