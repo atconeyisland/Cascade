@@ -36,30 +36,88 @@ Cascade also addresses a reproducibility gap: existing incident response researc
 ## Project Structure
 
 ```
-cascade/
-├── src/
-│   └── cascade_env/
-│       ├── __init__.py
-│       ├── environment.py            # Core environment (step, reset, render)
-│       ├── models.py                 # Pydantic models for observations, actions, rewards
-│       ├── server.py                 # Environment server
-│       ├── tasks/
-│       │   ├── __init__.py
-│       │   ├── task1.py              # DB CPU spike (single service)
-│       │   ├── task2.py              # Memory leak + service dependency
-│       │   └── task3.py              # Multi-service cascading failure
-│       └── graders/
-│           ├── __init__.py
-│           ├── grader1.py            # Grader for Task 1
-│           ├── grader2.py            # Grader for Task 2
-│           └── grader3.py            # Grader for Task 3
-├── server/
-│   └── app.py                        # Server entrypoint
-├── inference.py                      # Baseline agent script
-├── pyproject.toml
-├── openenv.yaml
-├── README.md
-└── test_all.py
+Directory structure:
+└── Cascade/
+    ├── build/
+    │   └── lib/
+    │       └── benchmark/
+    │           ├── client.py
+    │           ├── models.py
+    │           ├── server/
+    │           │   ├── app.py
+    │           │   ├── benchmark_environment.py
+    │           │   └── __init__.py
+    │           └── __init__.py
+    ├── Dockerfile
+    ├── inference.py
+    ├── models.py
+    ├── openenv.yaml
+    ├── openenv_benchmark.egg-info/
+    │   ├── dependency_links.txt
+    │   ├── entry_points.txt
+    │   ├── PKG-INFO
+    │   ├── requires.txt
+    │   ├── SOURCES.txt
+    │   └── top_level.txt
+    ├── pyproject.toml
+    ├── README.md
+    ├── requirements.txt
+    ├── run_server.py
+    ├── server/
+    │   ├── app.py
+    │   ├── benchmark_environment.py
+    │   ├── requirements.txt
+    │   ├── __init__.py
+    │   └── __pycache__/
+    │       ├── app.cpython-313.pyc
+    │       ├── benchmark_environment.cpython-313.pyc
+    │       └── __init__.cpython-313.pyc
+    ├── spaces.hf.yaml
+    ├── src/
+    │   ├── cascade_env/
+    │   │   ├── client.py
+    │   │   ├── environment.py
+    │   │   ├── graders/
+    │   │   │   ├── grader1.py
+    │   │   │   ├── grader2.py
+    │   │   │   ├── grader3.py
+    │   │   │   ├── __init__.py
+    │   │   │   └── __pycache__/
+    │   │   │       ├── grader1.cpython-313.pyc
+    │   │   │       ├── grader2.cpython-313.pyc
+    │   │   │       ├── grader3.cpython-313.pyc
+    │   │   │       └── __init__.cpython-313.pyc
+    │   │   ├── models.py
+    │   │   ├── server.py
+    │   │   ├── tasks/
+    │   │   │   ├── task1.py
+    │   │   │   ├── task2.py
+    │   │   │   ├── task3.py
+    │   │   │   ├── __init__.py
+    │   │   │   └── __pycache__/
+    │   │   │       ├── task1.cpython-313.pyc
+    │   │   │       ├── task2.cpython-313.pyc
+    │   │   │       ├── task3.cpython-313.pyc
+    │   │   │       └── __init__.cpython-313.pyc
+    │   │   ├── __init__.py
+    │   │   └── __pycache__/
+    │   │       ├── client.cpython-313.pyc
+    │   │       ├── environment.cpython-313.pyc
+    │   │       ├── models.cpython-313.pyc
+    │   │       └── __init__.cpython-313.pyc
+    │   └── cascade_env.egg-info/
+    │       ├── dependency_links.txt
+    │       ├── entry_points.txt
+    │       ├── PKG-INFO
+    │       ├── requires.txt
+    │       ├── SOURCES.txt
+    │       └── top_level.txt
+    ├── test_all.py
+    ├── test_client.py
+    ├── test_concurrency.py
+    ├── uv.lock
+    ├── validate_local.py
+    └── __init__.py
 ```
 
 ---
