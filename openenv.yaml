@@ -7,6 +7,7 @@ description: >
   steps under time pressure. Three difficulty tiers from single-system failures
   to cascading multi-service incidents with red herrings.
 author: Team Huntrix
+endpoint: https://atconeyisland-cascade.hf.space
 license: MIT
 tags:
   - openenv
