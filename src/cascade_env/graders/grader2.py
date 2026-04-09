@@ -29,7 +29,7 @@ def grade(steps_taken: list[str], final_observation: CascadeObservation) -> floa
             steps_found += 1
 
     # +0.10 — correct priority identified
-    if final_observation.priority_level.value == "P1":
+    if str(final_observation.priority_level) == "P1":
         score += 0.10
 
     # +0.25 — incident fully resolved
