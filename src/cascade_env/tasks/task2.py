@@ -5,8 +5,17 @@ CORRECT_RUNBOOK = "memory-runbook"
 CORRECT_INVESTIGATION = "auth-service"
 CORRECT_STEPS = [
     "drain connections",
+    "drain connection",
     "restart auth-service",
-    "preserve sessions"
+    "restart auth",
+    "restarted auth-service",
+    "restarted auth",
+    "preserve sessions",
+    "preserve session",
+    "increase heap",
+    "heap size",
+    "clear connection pool",
+    "connection pool",
 ]
 DESTRUCTIVE_ACTIONS = [
     "kill process",
@@ -26,6 +35,7 @@ class Task:
         self.runbook_selected = None
         self.investigation_done = False
         self.resolved = False
+        self._rewarded_steps = set()
 
     def get_initial_observation(self) -> CascadeObservation:
         return CascadeObservation(
@@ -93,7 +103,11 @@ class Task:
 
     def is_correct_step(self, step: str, steps_taken: list) -> bool:
         step_lower = step.lower().strip()
-        return any(correct in step_lower for correct in CORRECT_STEPS)
+        for correct in CORRECT_STEPS:
+            if correct in step_lower and correct not in self._rewarded_steps:
+                self._rewarded_steps.add(correct)
+                return True
+        return False
 
     def is_destructive_action(self, value: str) -> bool:
         value_lower = value.lower().strip()

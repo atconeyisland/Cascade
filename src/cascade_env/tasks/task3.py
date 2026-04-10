@@ -5,8 +5,17 @@ CORRECT_RUNBOOK = "network-runbook"
 CORRECT_INVESTIGATION = "network"
 CORRECT_STEPS = [
     "failover inventory-service",
+    "failover inventory",
     "failover order-service",
-    "failover notification-service"
+    "failover order",
+    "failover notification-service",
+    "failover notification",
+    "failover services",
+    "cross-az",
+    "cross az",
+    "az failover",
+    "network partition",
+    "network recovery",
 ]
 DESTRUCTIVE_ACTIONS = [
     "delete route",
@@ -27,6 +36,7 @@ class Task:
         self.runbook_selected = None
         self.investigation_done = False
         self.resolved = False
+        self._rewarded_steps = set()
 
     def get_initial_observation(self) -> CascadeObservation:
         return CascadeObservation(
@@ -56,7 +66,7 @@ class Task:
                 "notification-service"
             ],
             severity_level="critical",
-            priority_level="P3",
+            priority_level="P1",
             human_intervention_required=True
         )
 
@@ -90,7 +100,7 @@ class Task:
                 "notification-service"
             ],
             severity_level="critical",
-            priority_level="P3",
+            priority_level="P1",
             human_intervention_required=True
         )
 
@@ -104,14 +114,17 @@ class Task:
 
     def is_correct_step(self, step: str, steps_taken: list) -> bool:
         step_lower = step.lower().strip()
-        return any(correct in step_lower for correct in CORRECT_STEPS)
+        for correct in CORRECT_STEPS:
+            if correct in step_lower and correct not in self._rewarded_steps:
+                self._rewarded_steps.add(correct)
+                return True
+        return False
 
     def is_destructive_action(self, value: str) -> bool:
         value_lower = value.lower().strip()
         return any(d in value_lower for d in DESTRUCTIVE_ACTIONS)
 
     def should_escalate(self) -> bool:
-        # Task 3 always requires human escalation
         return True
 
     def is_resolved(self, steps_taken: list) -> bool:
