@@ -146,6 +146,10 @@ def state(task_id: int = Query(default=1)):
         "episode_done": env.episode_done,
         "accumulated_reward": env.accumulated_reward,
     }
+    
+@app.get("/")
+def root():
+    return {"status": "healthy", "name": "cascade", "version": "1.0.0"}
 
 
 # ---------------------------------------------------------------------------
