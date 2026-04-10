@@ -4,3 +4,5 @@ colorFrom: red
 colorTo: orange
 sdk: docker
 pinned: false
+tags:
+  - openenv
