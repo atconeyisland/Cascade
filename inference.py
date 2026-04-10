@@ -29,7 +29,7 @@ from cascade_env.models import CascadeAction
 # ---------------------------------------------------------------------------
 # Environment variables
 # ---------------------------------------------------------------------------
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://mokshita1-cascade-env.hf.space/")
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
@@ -245,7 +245,10 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
 
 
 def main() -> None:
-    client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    client = OpenAI(
+        base_url=os.environ["API_BASE_URL"],
+        api_key=API_KEY
+    )
     env_url = os.getenv("CASCADE_ENV_URL", "https://mokshita1-cascade-env.hf.space")
 
     print(f"[CONFIG] Connecting to Cascade environment at {env_url}", flush=True)
