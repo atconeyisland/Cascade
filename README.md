@@ -8,28 +8,27 @@ app_port: 7860
 tags:
   - openenv
 ---
+# Cascade — Incident Response RL Environment
 
-# Cascade — Incident Response Commander RL Environment
+> Train agents to stop failures before they spread.
 
-## Overview
+Cascade is an OpenEnv-compatible reinforcement learning environment that simulates real-world IT incident response. An agent acts as an Incident Response Commander — diagnosing production failures, selecting runbooks, executing remediation steps, and deciding when to escalate to a human.
 
-Cascade is an OpenEnv-compatible reinforcement learning environment that simulates real-world IT incident response scenarios. An agent acts as an Incident Response Commander, diagnosing and resolving production incidents by selecting runbooks, executing remediation steps, investigating anomalies, and escalating when necessary.
-
-The environment evaluates whether an LLM-based agent can handle progressively complex SRE (Site Reliability Engineering) tasks — from straightforward single-service incidents to multi-service cascading failures with red herrings.
-
-No existing OpenEnv environment covers production incident response. Cascade fills that gap directly.
+No existing OpenEnv environment covers production incident response. Cascade fills that gap.
 
 ---
 
 ## Motivation
 
-Current RL benchmarks focus on game-playing and robotics simulation. LLM-based agents now operate at human-expert level on many tasks, yet standardized benchmarks for real-world operational decision-making under uncertainty remain scarce.
+Current RL benchmarks focus on games and robotics. LLM agents now operate at human-expert level on many tasks, yet standardized benchmarks for real-world operational decision-making remain scarce.
 
-Incident response is a genuinely difficult domain. Unlike turn-based games, it requires partial observability (logs are noisy; ground truth is hidden), sequential reasoning under time pressure, cost-aware decisions (escalation is expensive; incorrect fixes carry penalties), and human-in-the-loop judgment around when to escalate.
+Incident response is genuinely hard. Unlike turn-based games, it requires:
+- **Partial observability** — logs are noisy; ground truth is hidden
+- **Sequential reasoning under time pressure** — wrong order means penalties
+- **Cost-aware decisions** — escalation is expensive; incorrect fixes carry penalties
+- **Human-in-the-loop judgment** — knowing when *not* to act is a skill
 
-Cascading failures represent the hardest case — multi-service incidents have exponential complexity, and task-specific agents routinely fail when services interact unexpectedly. Cascade directly tests whether an agent can reason about complex system topology.
-
-Every major cloud provider, SaaS platform, and fintech company faces this problem daily. Existing incident response research relies on proprietary data or toy simulators. Cascade provides an open, reproducible standard for the domain.
+Every major cloud provider, SaaS platform, and fintech company faces this problem daily. Cascade provides an open, reproducible standard for benchmarking agents on it.
 
 ---
 
@@ -38,7 +37,7 @@ Every major cloud provider, SaaS platform, and fintech company faces this proble
 ```
 cascade/
 ├── inference.py               # Baseline agent script (root — required)
-├── openenv.yaml               # OpenEnv spec metadata (root — required)
+├── openenv.yaml               # OpenEnv spec metadata
 ├── README.md
 ├── Dockerfile
 ├── requirements.txt
@@ -46,18 +45,15 @@ cascade/
 ├── uv.lock
 ├── test_all.py
 ├── server/
-│   └── app.py                 # Server entrypoint
+│   └── app.py                 # FastAPI server entrypoint
 └── src/
     └── cascade_env/
-        ├── __init__.py
-        ├── client.py
-        ├── models.py
-        ├── environment.py
-        ├── server.py
+        ├── models.py          # Pydantic models
+        ├── environment.py     # Core RL environment
         ├── tasks/
         │   ├── task1.py       # Easy: DB CPU spike
-        │   ├── task2.py       # Medium: Memory leak + service dependency
-        │   └── task3.py       # Hard: Multi-service cascading failure
+        │   ├── task2.py       # Medium: Memory leak + cascading failure
+        │   └── task3.py       # Hard: Network partition + red herrings
         └── graders/
             ├── grader1.py
             ├── grader2.py
@@ -66,28 +62,28 @@ cascade/
 
 ---
 
-## Environment Design
+## Observation Space
 
-### Observation Space
-
-Each observation returned by `reset()` and `step()` is a `CascadeObservation` with the following fields:
+Each observation returned by `reset()` and `step()` is a `CascadeObservation`:
 
 | Field | Type | Description |
 |---|---|---|
-| `alert_message` | `str` | PagerDuty-style alert string |
-| `system_logs` | `List[str]` | Timestamped log lines from affected services |
+| `alert_message` | `str` | PagerDuty-style alert that triggered the incident |
+| `system_logs` | `List[str]` | Timestamped log lines from affected services (may include noise) |
 | `available_runbooks` | `List[str]` | Runbooks the agent can select from |
-| `current_step` | `int` | Current step in the episode |
+| `current_step` | `int` | Current step number in the episode |
 | `steps_taken` | `List[str]` | History of actions taken so far |
 | `episode_done` | `bool` | Whether the episode has ended |
 | `affected_services` | `List[str]` | Services impacted by the incident |
-| `severity_level` | `str` | `"low"` / `"medium"` / `"high"` / `"critical"` |
-| `priority_level` | `str` | `"P1"` / `"P2"` / `"P3"` |
-| `human_intervention_required` | `bool` | Whether human escalation is required |
+| `severity_level` | `str` | `low` / `medium` / `high` / `critical` |
+| `priority_level` | `str` | `P1` / `P2` / `P3` |
+| `human_intervention_required` | `bool` | Whether human escalation is required to resolve |
 
-### Action Space
+---
 
-Each action is a `CascadeAction` with the following fields:
+## Action Space
+
+Each action is a `CascadeAction`:
 
 | Field | Type | Description |
 |---|---|---|
@@ -95,36 +91,36 @@ Each action is a `CascadeAction` with the following fields:
 | `action_value` | `str` | Free-text value for the action |
 | `reasoning` | `str` | Agent's explanation for taking the action |
 
-Valid action types:
+Valid `action_type` values:
 
 | Action | Description |
 |---|---|
-| `investigate` | Gather more information about a service or log |
-| `select_runbook` | Choose a runbook to apply |
+| `investigate` | Inspect a service or log stream for root cause clues |
+| `select_runbook` | Choose a runbook to apply to the incident |
 | `execute_step` | Execute a specific remediation step |
-| `escalate_to_human` | Escalate the incident to a human operator |
+| `escalate_to_human` | Hand off the incident to a human operator |
 | `resolve` | Mark the incident as resolved |
 | `rollback` | Roll back a previously executed step |
 
-### Reward Function
+---
 
-Rewards are accumulated across the episode, providing dense signal for RL training.
+## Reward Function
+
+Rewards accumulate across the episode, providing dense signal for RL training. Final score is clipped to `[0.0, 1.0]`.
 
 | Event | Reward |
 |---|---|
-| Correct system identified | +0.20 |
+| Correct system identified via investigation | +0.20 |
 | Correct runbook selected | +0.20 |
-| Correct remediation step | +0.15 each |
+| Correct remediation step executed | +0.15 each |
 | Incident fully resolved | +0.25 |
-| Appropriate escalation | +0.15 |
-| Correct priority identified | +0.10 |
+| Appropriate escalation to human | +0.15 |
+| Correct priority level identified | +0.10 |
 | Wrong runbook selected | -0.10 |
 | Unnecessary escalation | -0.10 |
 | Failed to escalate when required | -0.20 |
-| Wasted/redundant step | -0.05 |
+| Wasted or redundant step | -0.05 |
 | Rollback used | -0.05 |
-
-Final score is clipped to `[0.0, 1.0]`.
 
 ---
 
@@ -132,107 +128,130 @@ Final score is clipped to `[0.0, 1.0]`.
 
 ### Task 1 — Easy: DB CPU Spike
 
-**Scenario:** A database service is experiencing a CPU spike caused by a missing index on a high-traffic query.  
-**Key challenge:** Identify the correct runbook and execute the fix in the correct order.  
-**Priority:** P2 | **Human intervention required:** No | **Max steps:** 6  
-**Target scores:** weak model 0.60+, strong model 0.85+
+**Scenario:** A database service is experiencing a CPU spike caused by a missing index on a high-traffic query. Logs are clean and unambiguous.
+
+**Key challenge:** Identify the correct runbook and execute the fix in the right order.
+
+| Property | Value |
+|---|---|
+| Priority | P2 |
+| Human intervention required | No |
+| Max steps | 6 |
+| Baseline score (llama-3.3-70b) | 0.650 |
+
+---
 
 ### Task 2 — Medium: Memory Leak + Service Dependency
 
-**Scenario:** A memory leak in a backend service is causing cascading latency in a dependent API gateway.  
-**Key challenge:** Identify root cause across two services and prioritize remediation correctly.  
-**Priority:** P1 | **Human intervention required:** No | **Max steps:** 10  
-**Target scores:** weak model 0.20–0.35, strong model 0.50–0.70
+**Scenario:** A memory leak in an auth service is causing cascading 401 errors in a dependent API gateway. The gateway logs superficially suggest a network issue — a deliberate red herring.
+
+**Key challenge:** Identify root cause across two services, prioritize the correct one, and avoid the misleading gateway symptoms.
+
+| Property | Value |
+|---|---|
+| Priority | P1 |
+| Human intervention required | No |
+| Max steps | 10 |
+| Baseline score (llama-3.3-70b) | 1.000 |
+
+---
 
 ### Task 3 — Hard: Multi-Service Cascading Failure
 
-**Scenario:** A network partition triggers failures across multiple interdependent microservices with a misleading CPU spike as a red herring.  
-**Key challenge:** Triage correctly under noisy alerts, ignore the red herring, manage escalation, and restore services in the correct sequence.  
-**Priority:** P1 | **Human intervention required:** Yes | **Max steps:** 15  
-**Target scores:** weak model 0.05–0.15, strong model 0.20–0.35
+**Scenario:** A network partition triggers failures across three interdependent microservices simultaneously. A high-CPU warning from an unrelated service fires at the same time as a deliberate red herring.
+
+**Key challenge:** Triage correctly under noisy alerts, ignore the red herring, execute failovers in the correct order, and escalate appropriately.
+
+| Property | Value |
+|---|---|
+| Priority | P1 |
+| Human intervention required | Yes |
+| Max steps | 15 |
+| Baseline score (llama-3.3-70b) | 0.500 |
 
 ---
 
 ## Baseline Scores
 
-Baseline agent: `llama-3.3-70b-versatile` via Groq, run against the live HF Space.
+Model: `llama-3.3-70b-versatile` via Groq API, run against the live HF Space.
 
-| Task | Score | Steps | Success |
-|---|---|---|---|
-| `task1_easy` | 0.650 | 5 | Yes |
-| `task2_medium` | 0.650 | 6 | Yes |
-| `task3_hard` | 0.400 | 6 | No |
-
----
-
-## Grading
-
-Each grader evaluates the agent's full action history at episode end and returns a float between `0.0` and `1.0`. Graders are fully deterministic — the same action history always produces the same score.
-
-Grading criteria include correct runbook selection, remediation steps executed in order, appropriate escalation behavior, resolution within the step budget, and priority identification.
+| Task | Model | Score | Steps | Success |
+|---|---|---|---|---|
+| task1_easy | llama-3.3-70b-versatile | 0.650 | 5 | True |
+| task2_medium | llama-3.3-70b-versatile | 1.000 | 10 | True |
+| task3_hard | llama-3.3-70b-versatile | 0.500 | 6 | True |
 
 ---
 
 ## API Endpoints
 
+All endpoints accept an optional `?task_id=` query parameter (1, 2, or 3). Defaults to 1.
+
 | Endpoint | Method | Description |
 |---|---|---|
-| `/health` | GET | Health check |
-| `/reset` | POST | Start new episode, returns initial observation |
-| `/step` | POST | Execute action, returns observation + reward + done + info |
-| `/state` | GET | Return current environment state |
-
-All endpoints accept an optional `task_id` query parameter (1, 2, or 3). Defaults to 1.
+| `/health` | GET | Health check — returns `{"status": "healthy"}` |
+| `/metadata` | GET | Environment name and description |
+| `/schema` | GET | Action, observation, and state schemas |
+| `/reset` | POST | Start a new episode, returns initial observation |
+| `/step` | POST | Execute an action, returns observation + reward + done |
+| `/state` | GET | Current environment state |
+| `/mcp` | POST | JSON-RPC endpoint for OpenEnv multi-mode deployment |
 
 ---
 
 ## Setup & Running
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+### Environment variables
 
-# Set environment variables
+```bash
 export API_BASE_URL=https://api.groq.com/openai/v1
 export MODEL_NAME=llama-3.3-70b-versatile
 export HF_TOKEN=your_api_key_here
 export CASCADE_ENV_URL=https://atconeyisland-cascade.hf.space
-
-# Run baseline agent on all tasks
-python inference.py
-
-# Run all tasks with grading
-python test_all.py
-
-# Start environment server locally
-python -m uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
-### Docker
+### Run baseline agent
+
+```bash
+pip install -r requirements.txt
+python inference.py
+```
+
+### Run locally with Docker
 
 ```bash
 docker build -t cascade .
 docker run -p 7860:7860 cascade
 ```
 
+### Run tests
+
+```bash
+python test_all.py
+```
+
+---
+
+## Grading
+
+Graders evaluate the agent's full action history at episode end and return a float in `[0.0, 1.0]`. They are fully deterministic — the same action history always produces the same score.
+
+Criteria include: correct runbook selection, remediation steps executed, appropriate escalation, resolution within the step budget, and correct priority identification.
+
 ---
 
 ## Future Scope
 
-**Observation space** — A `time_elapsed` field to track minutes since incident start, adding urgency pressure and requiring agents to balance investigation depth against time constraints.
-
-**Action space** — A `request_more_logs` action allowing agents to request additional log data for iterative diagnosis.
-
-**Reward function** — Refined grading logic through empirical evaluation on real incident patterns, improving sensitivity to differences in agent strategy quality.
+- **`time_elapsed` field** in observations to add urgency pressure and require agents to balance investigation depth against time constraints
+- **`request_more_logs` action** to allow iterative log retrieval during diagnosis
+- **Refined grading** through empirical evaluation on real incident patterns
 
 ---
 
-## Team
-
-**Huntrix**
+## Team Huntrix
 
 | Member | Responsibility |
 |---|---|
-| Anvi Trivedi | Environment infrastructure, project setup, OpenEnv spec, state machine, reward function |
+| Anvi Trivedi | Environment infrastructure, OpenEnv spec, state machine, reward function, HF Space debugging, pre-submission validation, final submission |
 | Prachi Bhowal | Task definitions, grader logic, synthetic incident data, inference script |
-| Mokshita VP | Dockerfile, Hugging Face Space deployment, pre-submission validator, final submission |
+| Mokshita VP | Dockerfile, HF Space deployment, HF Space debugging |
