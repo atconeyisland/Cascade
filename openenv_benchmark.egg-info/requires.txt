@@ -1,5 +1,0 @@
-openenv-core@ git+https://github.com/meta-pytorch/OpenEnv.git@main
-
-[dev]
-pytest>=8.0.0
-pytest-cov>=4.0.0
