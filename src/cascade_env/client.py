@@ -56,6 +56,9 @@ class CascadeEnv:
         )
         response.raise_for_status()
         data = response.json()
+        # FIX: unwrap observation if nested
+        if "observation" in data:
+            return CascadeObservation(**data["observation"])
         return CascadeObservation(**data)
 
     def step(self, action: CascadeAction, task_id: int = 1) -> StepResult:
