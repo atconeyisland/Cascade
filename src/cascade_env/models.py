@@ -26,6 +26,9 @@ class CascadeObservation(BaseModel):
     severity_level: str
     priority_level: str
     human_intervention_required: bool
+    current_step: int = 0
+    episode_done: bool = False
+    steps_taken: List[str] = Field(default_factory=list)
 
 
 class CascadeAction(BaseModel):
