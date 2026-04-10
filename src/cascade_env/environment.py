@@ -51,7 +51,7 @@ class CascadeEnvironment:
 
         step_reward, reward_info = self._calculate_reward(action)
         self.accumulated_reward = min(
-            1.0, max(0.0, self.accumulated_reward + step_reward)
+            0.99, max(0.01, self.accumulated_reward + step_reward)
         )
 
         done = self._check_done(action)
@@ -67,7 +67,7 @@ class CascadeEnvironment:
                     self.current_step, self.steps_taken, done
                 )
             )
-            self.accumulated_reward = final_score
+            self.accumulated_reward = min(0.99, max(0.01, final_score))
 
         observation = self._task.get_current_observation(
             self.current_step, self.steps_taken, done

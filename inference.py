@@ -213,7 +213,8 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
             )
 
             obs         = result.observation
-            reward      = result.reward or 0.0
+            reward      = result.reward or 0.01
+            reward      = round(min(0.99, max(0.01, reward)), 4)
             done        = result.done
             steps_taken = step
 
@@ -225,13 +226,13 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
             if done:
                 break
 
-        score = result.reward if result else 0.0
-        score = round(min(max(score, 0.0), 1.0), 4)
+        score = result.reward if result else 0.01
+        score = round(min(0.99, max(0.01, score)), 4)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
         print(f"[DEBUG] Task {task_name} failed: {exc}", flush=True)
-        score   = 0.0
+        score   = 0.01
         success = False
 
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)

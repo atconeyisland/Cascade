@@ -39,7 +39,7 @@ def grade(steps_taken: list[str], final_observation: CascadeObservation) -> floa
     investigation_done = any(CORRECT_INVESTIGATION in s for s in steps_lower)
     escalated = any("escalate_to_human" in s for s in steps_lower)
     if runbook_done and investigation_done and steps_found >= 2 and escalated:
-        score += 0.25
+        score += 0.20
 
     # -0.20 — failed to escalate when human intervention was required
     # Task 3 always has human_intervention_required=True
