@@ -52,4 +52,4 @@ def grade(steps_taken: list[str], final_observation: CascadeObservation) -> floa
         score -= 0.15
 
     # clip to 0.0 – 1.0
-    return round(min(1.0, max(0.0, score)), 4)
+    return round(min(0.99, max(0.01, score)), 4)
