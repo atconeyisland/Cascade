@@ -157,11 +157,11 @@ Final score is clipped to `[0.0, 1.0]`.
 
 Baseline agent: `llama-3.3-70b-versatile` via Groq, run against the live HF Space.
 
-| Task | Score | Steps | Success |
-|---|---|---|---|
-| `task1_easy` | 0.650 | 5 | Yes |
-| `task2_medium` | 0.650 | 6 | Yes |
-| `task3_hard` | 0.400 | 6 | No |
+| Task         | Model                  | Score | Steps | Success |
+|--------------|------------------------|-------|-------|---------|
+| task1_easy   | llama-3.3-70b-versatile | 0.650 | 5     | True    |
+| task2_medium | llama-3.3-70b-versatile | 1.000 | 10    | True    |
+| task3_hard   | llama-3.3-70b-versatile | 0.500 | 6     | True    |
 
 ---
 
