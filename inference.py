@@ -5,9 +5,10 @@ Baseline agent script for the Cascade incident response environment.
 Runs the agent through all 3 tasks and emits [START] [STEP] [END] logs.
 
 Environment variables (never hardcoded):
-    API_BASE_URL   The LLM API endpoint
+    API_BASE_URL   The LLM API endpoint (injected by validator)
     MODEL_NAME     The model identifier
-    HF_TOKEN       Hugging Face / API key
+    API_KEY        API key (injected by validator)
+    HF_TOKEN       Fallback API key
 
 Stdout format (exact — do not modify field names or ordering):
     [START] task=<task_name> env=<benchmark> model=<model_name>
@@ -27,14 +28,14 @@ from cascade_env.client import CascadeEnv
 from cascade_env.models import CascadeAction
 
 # ---------------------------------------------------------------------------
-# Environment variables
+# Environment variables — no hardcoded defaults for API_BASE_URL or API_KEY
 # ---------------------------------------------------------------------------
-API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://mokshita1-cascade-env.hf.space/")
+API_KEY      = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+API_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
 if not API_KEY:
-    print("ERROR: HF_TOKEN (or API_KEY or OPENAI_API_KEY) environment variable is required.", file=sys.stderr)
+    print("ERROR: API_KEY or HF_TOKEN environment variable is required.", file=sys.stderr)
     sys.exit(1)
 
 print(f"[CONFIG] API_BASE_URL={API_BASE_URL}")
@@ -224,7 +225,6 @@ def run_task(client: OpenAI, task_name: str, env: CascadeEnv) -> dict:
             if done:
                 break
 
-        # Use final grader score if available, otherwise sum step rewards
         score = result.reward if result else 0.0
         score = round(min(max(score, 0.0), 1.0), 4)
         success = score >= SUCCESS_SCORE_THRESHOLD
@@ -249,8 +249,8 @@ def main() -> None:
         base_url=os.environ["API_BASE_URL"],
         api_key=API_KEY
     )
-    env_url = os.getenv("CASCADE_ENV_URL", "https://mokshita1-cascade-env.hf.space")
 
+    env_url = os.getenv("CASCADE_ENV_URL", "https://atconeyisland-cascade.hf.space")
     print(f"[CONFIG] Connecting to Cascade environment at {env_url}", flush=True)
 
     max_retries = 30
